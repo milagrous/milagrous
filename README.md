@@ -4,7 +4,7 @@
   - Java SE
   - Android SDK
   - Google MAP API
-  - SQLite (for archives)
+  - Realm (for archives)
   - JSON (for data transfer format)
 
 ## Scrum task managemnet tool (optional)
