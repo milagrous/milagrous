@@ -94,11 +94,11 @@ public class RecordCRUD {
                 }
             }
             realm.commitTransaction ();
-            callback.RecordIsDeleted (true);
+            callback.RecordIsDeleted(true);
 
             return true;
         }
-        callback.RecordIsDeleted (false);
+        callback.RecordIsDeleted(false);
 
         return false;
     }
@@ -117,16 +117,12 @@ public class RecordCRUD {
                     .equalTo ("type", record.getType()).findFirst ();
             realm.beginTransaction ();
             RecordToBeEdited.setType(type);
-// TODO update for record model
-//            if (!count.isEmpty ())
-//                RecordToBeEdited.setCount(count);
-//            if (!longitute)
-//                RecordToBeEdited.setCount (count);
-//            if (!count.isEmpty ())
-//                RecordToBeEdited.setCount (count);
-//            if (!count.isEmpty ())
-//                RecordToBeEdited.setCount (count);
-//
+            if (count > 0) {
+                RecordToBeEdited.setCount(count);
+            }
+            RecordToBeEdited.setLongitude(longitute);
+            RecordToBeEdited.setLatitude(lattitude);
+            RecordToBeEdited.setAltitude(altitude);
 
             realm.commitTransaction ();
             updateCompleteListener.onUpdate (true);
