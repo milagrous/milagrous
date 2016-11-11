@@ -9,6 +9,8 @@
     If you have previously set up a key for the debug target with the debug signing certificate,
     you will also need to set up a key for your release certificate.
 
+
+
     Follow the directions here:
 
     https://developers.google.com/maps/documentation/android/signup
@@ -16,5 +18,5 @@
     Once you have your key (it starts with "AIza"), replace the "google_maps_key"
     string in this file.
     -->
-        <string name="google_maps_key" translatable="false" templateMergeStrategy="preserve">YOUR_KEY_HERE</string>
+        <string name="google_maps_key" translatable="false" templateMergeStrategy="preserve">AIzaSyAzV_Go-czDeC3E8tF2XnBrF_A6xrMPRxY</string>
 </resources>

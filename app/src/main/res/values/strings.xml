@@ -3,4 +3,19 @@
     <string name="title_activity_maps">Map</string>
     <string name="hello">Some String goes here</string>
     <string name="title_record_popup">New Record</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="it_s_a_popupwindow">It\'s a PopupWindow</string>
+
+    <string-array name="objectsarray">
+        <item>Mercury</item>
+        <item>Venus</item>
+        <item>Earth</item>
+        <item>Mars</item>
+        <item>Jupiter</item>
+        <item>Saturn</item>
+        <item>Uranus</item>
+        <item>Neptune</item>
+    </string-array>
+
 </resources>

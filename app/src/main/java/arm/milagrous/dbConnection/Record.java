@@ -9,9 +9,9 @@ public class Record extends RealmObject {
 
     private String type;
     private int count;
-    private long latitude;
-    private long longitude;
-    private long altitude;
+    private double latitude;
+    private double longitude;
+    private double altitude;
 
 
     public void setType(String type) {
@@ -22,15 +22,15 @@ public class Record extends RealmObject {
         this.count = count;
     }
 
-    public void setLatitude(long latitude) {
+    public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
 
-    public void setLongitude(long longitude) {
+    public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
 
-    public void setAltitude(long altitude) {
+    public void setAltitude(double altitude) {
         this.altitude = altitude;
     }
 
@@ -42,15 +42,15 @@ public class Record extends RealmObject {
         return count;
     }
 
-    public long getLatitude() {
+    public double getLatitude() {
         return latitude;
     }
 
-    public long getLongitude() {
+    public double getLongitude() {
         return longitude;
     }
 
-    public long getAltitude() {
+    public double getAltitude() {
         return altitude;
     }
 

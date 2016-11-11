@@ -2,6 +2,7 @@ package arm.milagrous.dbConnection;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,14 +17,16 @@ public class RecordCRUD {
 
     private Context context;
     private Realm realm;
+    private static final String TAG = "RecordCRUDClass";
 
     private RecordCRUD () {
 
     }
 
-    public boolean CreateRealm (String name) {
+  public boolean CreateRealm (String name) {
         if (!(name == null)) {
             realm = RealmManager.getInstance (context).createRealm (name);
+            Log.d(TAG, "Realm path" +  realm.getPath());
             return true;
         }
         return false;
@@ -48,25 +51,29 @@ public class RecordCRUD {
      * @return
      */
     public boolean createRecord (Record record, RecordCreatedCallback createdCallback) {
-        if (isExist (getAllRecords(), record)) {
+
+
+
+        if (isExist(getAllRecords(), record)) {
             createdCallback.RecordCreated(false);
-
+            Log.d(TAG, "DB record exist");
             return false;
+        } else {
+
+            realm.beginTransaction();
+            Record newRecord = realm.createObject(Record.class);
+            newRecord.setType(record.getType());
+            newRecord.setCount(record.getCount());
+
+            newRecord.setLatitude(record.getLatitude());
+            newRecord.setLongitude(record.getLongitude());
+            newRecord.setAltitude(record.getAltitude());
+
+            realm.commitTransaction();
+            createdCallback.RecordCreated(true);
+
+            return true;
         }
-
-        realm.beginTransaction ();
-        Record newRecord = realm.createObject (Record.class);
-        newRecord.setType(record.getType());
-        newRecord.setCount(record.getCount());
-
-        newRecord.setLatitude(record.getLatitude());
-        newRecord.setLongitude(record.getLongitude());
-        newRecord.setAltitude(record.getAltitude());
-
-        realm.commitTransaction ();
-        createdCallback.RecordCreated (true);
-
-        return true;
     }
 
     /**
@@ -80,15 +87,21 @@ public class RecordCRUD {
     }
 
     /**
-     * @param Record     is the Record to be deleted and the
+     * @param record     is the Record to be deleted and the
      * @param callback is for checking for success or failure of operation
      * @return <h3><i>true</i></h3> if Record is successfully deleted and <h3><i>false</i></h3> if otherwise
      */
-    public boolean deleteRecord (Record Record, RecordDeletedCallback callback) {
-        if (isExist (getAllRecords (), Record)) {
+    public boolean deleteRecord (Record record, RecordDeletedCallback callback) {
+        if (isExist (getAllRecords (), record)) {
             realm.beginTransaction ();
-            RealmResults<Record> realmResults = realm.where (Record.class).equalTo ("type", Record.getType()).findAll ();
+            RealmResults<Record> realmResults = realm.where (Record.class)
+                    .equalTo("longitude", record.getLongitude())
+                    .equalTo("latitude", record.getLatitude())
+                    .findAll();
+
+            Log.d(TAG, "RealmResults size is" + realmResults.size());
             if (!realmResults.isEmpty ()) {
+                Log.d(TAG, "realmResults is NOT Empty");
                 for (int i = 0; i < realmResults.size (); i++) {
                     realmResults.get (i).deleteFromRealm ();
                 }
@@ -157,14 +170,24 @@ public class RecordCRUD {
      * @param record  is the Record to confirm its existence in the database
      * @return <h3><i>true</i></h3> if Record found and <h3><i>false</i></h3> if otherwise
      */
-    private boolean isExist (List<Record> records, Record record) {
-        for (int i = 0; i < records.size (); i++) {
-            Record record1 = records.get (i);
-            if (record1.getType ().equals (record.getType ()))
+    private boolean isExist(List<Record> records, Record record) {
+        for (int i = 0; i < records.size(); i++) {
+            Record record1 = records.get(i);
+            Log.d(TAG, "RECORD");
+            Log.d(TAG, String.valueOf(record.getLatitude()));
+            Log.d(TAG, String.valueOf(record.getLongitude()));
 
+            Log.d(TAG, "RECORD1");
+            Log.d(TAG, String.valueOf(record1.getLatitude()));
+            Log.d(TAG, String.valueOf(record1.getLongitude()));
+
+            if ((record1.getLatitude() == record.getLatitude()) && (record1.getLongitude() == record.getLongitude()))
+            {
+
+                Log.d(TAG, "RealmDB record EXIST");
                 return true;
+            }
         }
-
         return false;
     }
 

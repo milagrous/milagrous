@@ -19,6 +19,8 @@ public class RealmManager {
      * @param context is the application context
      * @return a realManager instance
      */
+
+
     public static RealmManager getInstance(Context context) {
         RealmManager realmManager = new RealmManager ();
         realmManager.context = context;
