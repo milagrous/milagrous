@@ -21,6 +21,7 @@ import android.view.ViewGroup.LayoutParams;
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -33,6 +34,11 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.GoogleMap.OnMapLongClickListener;
 
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import arm.milagrous.dbConnection.Record;
 import arm.milagrous.dbConnection.RecordCRUD;
 
@@ -42,7 +48,8 @@ import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
 
 
-public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback, OnMapLongClickListener, NumberPicker.OnValueChangeListener {
+public class MapsActivity extends FragmentActivity
+        implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback, OnMapLongClickListener, NumberPicker.OnValueChangeListener {
 
     private GoogleMap mMap;
     private static final String TAG = "MapsActivity";
@@ -51,7 +58,7 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
     private GoogleApiClient client;
-    String[] data = {"one", "two", "three", "four", "five"};
+    //String[] data = {"one", "two", "three", "four", "five"};
     String selectedObjectType;
     final RecordCRUD crud = RecordCRUD.getInstance(this);
 
@@ -66,7 +73,6 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
         mapFragment.getMapAsync(this);
 
         crud.CreateRealm("RecordTable");
-
 
 
 //        Log.d(TAG, "RealmDB INITIAL size is:" + crud.getAllRecords().size());
@@ -89,9 +95,11 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
+        // ATTENTION: This "addApi(AppIndex.API)"was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).
 
-                addApi(AppIndex.API).build();
+                addApi(AppIndex.API).addApi(AppIndex.API).build();
 
     }
 
@@ -111,9 +119,9 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
         mMap.setOnMarkerClickListener(this);
 
         // Add a marker in Sydney and move the camera
-        LatLng stepanakert = new LatLng(39.8264417, 46.728725);
-        Marker initialMarker = mMap.addMarker(new MarkerOptions().position(stepanakert).title("Ստեփանակերտ"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(stepanakert));
+        // LatLng stepanakert = new LatLng(39.8264417, 46.728725);
+        // Marker initialMarker = mMap.addMarker(new MarkerOptions().position(stepanakert).title("Ստեփանակերտ"));
+        // mMap.moveCamera(CameraUpdateFactory.newLatLng(stepanakert));
 
 
         for(Record record : crud.getAllRecords()){
@@ -146,23 +154,33 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
 
         initPopupWindow(popupWindow, latLng);
 
-
-
     }
+
     private void initPopupWindow(final PopupWindow popupWindow, Marker marker) {
-
-
         initPopupWindow(popupWindow, marker.getPosition());
     }
 
     private void initPopupWindow(final PopupWindow popupWindow, final LatLng latLng) {
 
+        final Record record = crud.getRecord(latLng, new RecordCRUD.RecordFoundCompleteListener() {
+            @Override
+            public void onRecordFound(Record rec) {
+                if (rec != null) {
+                    Log.i(TAG, "found" + rec.toString() + " record");
+                } else {
+                    Log.i(TAG, "not found record on " + latLng.toString());
+                }
+            }
+        });
+
+
         final LatLng objectLocation = latLng;
-        ///////////////////SPINNER////////////////////////////////
+        /************* SPINNER **********/
 
         Spinner spinner = (Spinner) popupWindow.getContentView().findViewById(R.id.spinner);
         if (spinner == null) {
             Log.i(TAG, "spinner is null");
+
         } else {
             Log.i(TAG, "spinner is NOT NULL");
         }
@@ -182,10 +200,20 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
         spinner.setAdapter(adapter);
 
 
+
+        if (record != null) {
+            List<String> types  = Arrays.asList(getResources().getStringArray(R.array.objectsarray));
+            int index = types.indexOf(record.getType());
+            if (index != -1) {
+                spinner.setSelection(index);
+            }
+        }
+
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View popupView,
                                        int position, long id) {
+
                 Log.d(TAG, "Selected element ID is:" + id);
                 selectedObjectType = getResources().getStringArray(R.array.objectsarray)[(int) id];
             }
@@ -197,9 +225,7 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
 
         Log.d(TAG, "Selected element is:" + spinner.getSelectedItem());
 
-///////////////////////////////////
-
-        ////////////////Number Picker/////////////////
+        /****************Number Picker********************/
         Button b1 = (Button) popupWindow.getContentView().findViewById(R.id.buttonIncrease);
         Button b2 = (Button) popupWindow.getContentView().findViewById(R.id.buttonDecrease);
         final NumberPicker np = (NumberPicker) popupWindow.getContentView().findViewById(R.id.number);
@@ -207,6 +233,10 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
         np.setMinValue(1);   // min value 0
         np.setWrapSelectorWheel(false);
         np.setOnValueChangedListener(this);
+
+        if (record != null) {
+            np.setValue(record.getCount());
+        }
 
         b1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -240,28 +270,48 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
             @Override
             public void onClick(View v) {
 
-                final Record record = new Record();
-                record.setType(selectedObjectType);
-                record.setCount(np.getValue());
-                record.setLatitude(objectLocation.latitude);
-                record.setLongitude(objectLocation.longitude);
-                //record.setAltitude(ALTITUDE);
+                if (record == null) {
+                    // if there is no record on specified map location
 
-                Log.d(TAG, String.valueOf(objectLocation.latitude));
-                Log.d(TAG, String.valueOf(objectLocation.longitude));
+                    final Record record = new Record();
 
-                crud.createRecord(record, new RecordCRUD.RecordCreatedCallback() {
-                    @Override
-                    public void RecordCreated(boolean yesNo) {
-                        if (yesNo == true) {
-                            Marker initialMarker = mMap.addMarker(new MarkerOptions().position(objectLocation).title(selectedObjectType));
-                            mMap.moveCamera(CameraUpdateFactory.newLatLng(objectLocation));
-                            Log.d(TAG, "object1 created");
-                        } else {
-                            Log.d(TAG, "object1 NOT created");
+                    record.setType(selectedObjectType);
+                    record.setCount(np.getValue());
+                    record.setLatitude(objectLocation.latitude);
+                    record.setLongitude(objectLocation.longitude);
+                    //record.setAltitude(ALTITUDE);
+
+                    Log.d(TAG, String.valueOf(objectLocation.latitude));
+                    Log.d(TAG, String.valueOf(objectLocation.longitude));
+
+                    crud.createRecord(record, new RecordCRUD.RecordCreatedCallback() {
+                        @Override
+                        public void RecordCreated(boolean yesNo) {
+                            if (yesNo == true) {
+                                Marker initialMarker = mMap.addMarker(new MarkerOptions().position(objectLocation).title(selectedObjectType));
+                                mMap.moveCamera(CameraUpdateFactory.newLatLng(objectLocation));
+                                Log.d(TAG, "object1 created");
+                            } else {
+                                Log.d(TAG, "object1 NOT created");
+                            }
                         }
-                    }
-                });
+                    });
+                } else {
+                    // was clicked on map marker, already existing record
+
+                    crud.updateRecord(record, selectedObjectType, np.getValue(), objectLocation.latitude, objectLocation.longitude,
+                            new RecordCRUD.OnUpdateCompleteListener() {
+                                @Override
+                                public void onUpdate(boolean yes) {
+                                    if (yes) {
+                                        Log.i(TAG, "record updated succefully");
+                                    } else {
+                                        Log.i(TAG, "falied to update record");
+                                    }
+                                }
+                            });
+                }
+
                 popupWindow.dismiss();
 
             }
@@ -320,13 +370,50 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMarker
                 LayoutParams.WRAP_CONTENT,
                 LayoutParams.WRAP_CONTENT);
 
-        LatLng markerLocation = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+        //LatLng markerLocation = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
         Log.d(TAG, String.valueOf(marker.getPosition().latitude));
         Log.d(TAG, String.valueOf(marker.getPosition().longitude));
 
-        marker.remove();
+        //marker.remove();
 
-        initPopupWindow(popupWindow, markerLocation);
+        initPopupWindow(popupWindow, marker);
 
-        return true; }
+        return true;
+    }
+
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public Action getIndexApiAction() {
+        Thing object = new Thing.Builder()
+                .setName("Maps Page") // TODO: Define a title for the content shown.
+                // TODO: Make sure this auto-generated URL is correct.
+                .setUrl(Uri.parse(""))
+                .build();
+        return new Action.Builder(Action.TYPE_VIEW)
+                .setObject(object)
+                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
+                .build();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        AppIndex.AppIndexApi.start(client, getIndexApiAction());
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        AppIndex.AppIndexApi.end(client, getIndexApiAction());
+        client.disconnect();
+    }
 }

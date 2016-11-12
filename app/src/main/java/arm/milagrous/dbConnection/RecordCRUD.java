@@ -4,6 +4,8 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -123,8 +125,8 @@ public class RecordCRUD {
      * @param updateCompleteListener is a listener callback for checking if the update is successful
      * @return boolean statement of <h3><i>true</i></h3> if update is successful and <h3><i>false</i></h3> if otherwise
      */
-    public boolean updateRecord (Record record, String type, Integer count, Long longitute,
-                                 Long lattitude, Long altitude, OnUpdateCompleteListener updateCompleteListener) {
+    public boolean updateRecord (Record record, String type, Integer count, Double longitute,
+                                 Double lattitude, /*Long altitude,*/ OnUpdateCompleteListener updateCompleteListener) {
         if (isExist (getAllRecords (), record)) {
             Record RecordToBeEdited = realm.where (Record.class)
                     .equalTo ("type", record.getType()).findFirst ();
@@ -135,7 +137,7 @@ public class RecordCRUD {
             }
             RecordToBeEdited.setLongitude(longitute);
             RecordToBeEdited.setLatitude(lattitude);
-            RecordToBeEdited.setAltitude(altitude);
+            //RecordToBeEdited.setAltitude(altitude);
 
             realm.commitTransaction ();
             updateCompleteListener.onUpdate (true);
@@ -165,6 +167,24 @@ public class RecordCRUD {
         return null;
     }
 
+
+    /**
+     * @param marker  coordinates param used in finding the Record
+     * @param RecordFoundCompleteListener is a callback listener for validating Record found
+     * @return the Record if not <b><i>null</i></i></b>
+     */
+    public Record getRecord(LatLng marker,
+                            RecordFoundCompleteListener RecordFoundCompleteListener) {
+            realm.beginTransaction ();
+            Record record = realm.where (Record.class).
+                    equalTo("latitude", marker.latitude).equalTo("longitude", marker.longitude).findFirst();
+
+            realm.commitTransaction ();
+            RecordFoundCompleteListener.onRecordFound (record);
+
+            return record;
+    }
+
     /**
      * @param records is the list of Records in the database
      * @param record  is the Record to confirm its existence in the database
@@ -181,9 +201,7 @@ public class RecordCRUD {
             Log.d(TAG, String.valueOf(record1.getLatitude()));
             Log.d(TAG, String.valueOf(record1.getLongitude()));
 
-            if ((record1.getLatitude() == record.getLatitude()) && (record1.getLongitude() == record.getLongitude()))
-            {
-
+            if ((record1.getLatitude() == record.getLatitude()) && (record1.getLongitude() == record.getLongitude())) {
                 Log.d(TAG, "RealmDB record EXIST");
                 return true;
             }
@@ -206,23 +224,23 @@ public class RecordCRUD {
     }
 
     public interface RecordCreatedCallback {
-        public void RecordCreated (boolean yesNo);
+         void RecordCreated (boolean yesNo);
     }
 
     public interface RecordDeletedCallback {
-        public void RecordIsDeleted (boolean yesNo);
+         void RecordIsDeleted (boolean yesNo);
     }
 
     public interface OnUpdateCompleteListener {
-        public void onUpdate (boolean yes);
+         void onUpdate (boolean yes);
     }
 
     public interface RecordFoundCompleteListener {
-        public void onRecordFound (Record Record);
+         void onRecordFound (Record Record);
     }
 
     public interface OnAllItemsDeletedListener {
-        public void onAllItemsDeleted (boolean yes);
+         void onAllItemsDeleted (boolean yes);
     }
 
 }

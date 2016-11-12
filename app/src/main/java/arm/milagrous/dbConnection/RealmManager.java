@@ -33,6 +33,6 @@ public class RealmManager {
      */
     public Realm createRealm(String name) {
         Realm.init(context);
-        return Realm.getInstance(new RealmConfiguration.Builder().name(name).build());
+        return Realm.getInstance(new RealmConfiguration.Builder().deleteRealmIfMigrationNeeded().name(name).build());
     }
 }
