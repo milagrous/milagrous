@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.content.res.TypedArrayUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -73,6 +74,7 @@ public class MapsActivity extends FragmentActivity
         mapFragment.getMapAsync(this);
 
         crud.CreateRealm("RecordTable");
+
 
 
 //        Log.d(TAG, "RealmDB INITIAL size is:" + crud.getAllRecords().size());
@@ -154,9 +156,12 @@ public class MapsActivity extends FragmentActivity
 
         initPopupWindow(popupWindow, latLng);
 
-    }
 
+
+    }
     private void initPopupWindow(final PopupWindow popupWindow, Marker marker) {
+
+
         initPopupWindow(popupWindow, marker.getPosition());
     }
 
@@ -353,6 +358,139 @@ public class MapsActivity extends FragmentActivity
 
     }
 
+    private void initEditPopupWindow(final PopupWindow editPopupWindow, Marker marker) {
+
+        final LatLng objectLocation = marker.getPosition();
+
+        final Record record = crud.getRecord(objectLocation, new RecordCRUD.RecordFoundCompleteListener() {
+            @Override
+            public void onRecordFound(Record rec) {
+                if (rec != null) {
+                    Log.i(TAG, "found" + rec.toString() + " record");
+                } else {
+                    Log.i(TAG, "not found record on " + objectLocation.toString());
+                }
+            }
+        });
+        ///////////////////SPINNER////////////////////////////////
+
+        Spinner spinner = (Spinner) editPopupWindow.getContentView().findViewById(R.id.edit_spinner);
+        if (spinner == null) {
+            Log.i(TAG, "Edit Spinner is null");
+        } else {
+            Log.i(TAG, "Edit Spinner is NOT NULL");
+        }
+
+
+        ArrayAdapter<?> adapter =
+                ArrayAdapter.createFromResource(this, R.array.objectsarray, android.R.layout.simple_spinner_item);
+
+        if (adapter == null) {
+            Log.i(TAG, "Edit Adapter is null");
+        } else {
+            Log.i(TAG, "Edit Adapter is NOT NULL");
+        }
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        spinner.setAdapter(adapter);
+
+        List<String> objectsList = Arrays.asList(getResources().getStringArray(R.array.objectsarray));
+
+        Log.d(TAG, "Element ID is" + String.valueOf(objectsList.indexOf(record.getType())));
+
+        spinner.setSelection(objectsList.indexOf(record.getType()));
+        //ArrayUtils.indexOf(getResources().getStringArray(R.array.objectsarray), record.getType());
+
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View popupView,
+                                       int position, long id) {
+                Log.d(TAG, "Selected element ID is:" + id);
+                selectedObjectType = getResources().getStringArray(R.array.objectsarray)[(int) id];
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> arg0) {
+            }
+        });
+
+//        Log.d(TAG, "Selected element is:" + spinner.getSelectedItem());
+
+   /********************Number Picker***************/
+        Button btnIncrease = (Button) editPopupWindow.getContentView().findViewById(R.id.buttonIncrease);
+        Button btnDecrease = (Button) editPopupWindow.getContentView().findViewById(R.id.buttonDecrease);
+        final NumberPicker np = (NumberPicker) editPopupWindow.getContentView().findViewById(R.id.number);
+        np.setMaxValue(100); // max value 100
+        np.setMinValue(1);   // min value 0
+        np.setValue(record.getCount());
+        np.setWrapSelectorWheel(false);
+        np.setOnValueChangedListener(this);
+
+
+        btnIncrease.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                np.setValue(np.getValue() + 1);
+            }
+        });
+
+        btnDecrease.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                np.setValue(np.getValue() - 1);
+            }
+        });
+
+        editPopupWindow.showAtLocation(editPopupWindow.getContentView(), Gravity.CENTER, 0, 0);
+
+        Button btnCancel = (Button) editPopupWindow.getContentView().findViewById(R.id.cancel);
+        btnCancel.setOnClickListener(new Button.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                editPopupWindow.dismiss();
+            }
+        });
+
+
+        Button btnSave = (Button) editPopupWindow.getContentView().findViewById(R.id.save);
+        btnSave.setOnClickListener(new Button.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+                final Record record = new Record();
+                record.setType(selectedObjectType);
+                record.setCount(np.getValue());
+                record.setLatitude(objectLocation.latitude);
+                record.setLongitude(objectLocation.longitude);
+                //record.setAltitude(ALTITUDE);
+
+                Log.d(TAG, String.valueOf(objectLocation.latitude));
+                Log.d(TAG, String.valueOf(objectLocation.longitude));
+
+                crud.createRecord(record, new RecordCRUD.RecordCreatedCallback() {
+                    @Override
+                    public void RecordCreated(boolean yesNo) {
+                        if (yesNo == true) {
+                            Marker initialMarker = mMap.addMarker(new MarkerOptions().position(objectLocation).title(selectedObjectType));
+                            mMap.moveCamera(CameraUpdateFactory.newLatLng(objectLocation));
+                            Log.d(TAG, "object1 created");
+                        } else {
+                            Log.d(TAG, "object1 NOT created");
+                        }
+                    }
+                });
+                editPopupWindow.dismiss();
+
+            }
+        });
+
+
+
+    }
+
     @Override
     public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
         Log.i("value is", "" + newVal);
@@ -364,19 +502,28 @@ public class MapsActivity extends FragmentActivity
         LayoutInflater layoutInflater
                 = (LayoutInflater) this.getSystemService(LAYOUT_INFLATER_SERVICE);
 
-        View popupView = layoutInflater.inflate(R.layout.record_popup, null, false);
-        final PopupWindow popupWindow = new PopupWindow(
-                popupView,
+        View editPopupView = layoutInflater.inflate(R.layout.edit_object_popup, null, false);
+        final PopupWindow editPopupWindow = new PopupWindow(
+                editPopupView,
                 LayoutParams.WRAP_CONTENT,
                 LayoutParams.WRAP_CONTENT);
 
-        //LatLng markerLocation = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+        LatLng markerLocation = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
         Log.d(TAG, String.valueOf(marker.getPosition().latitude));
         Log.d(TAG, String.valueOf(marker.getPosition().longitude));
 
         //marker.remove();
 
-        initPopupWindow(popupWindow, marker);
+        if (editPopupWindow == null) {
+            Log.d(TAG, "editPopupWindow is null");
+        } else {
+            Log.d(TAG, "editPopupWindow is NOT NULL");
+        }
+
+        initEditPopupWindow(editPopupWindow, marker);
+//        marker.remove();
+
+//        initPopupWindow(popupWindow, marker);
 
         return true;
     }
@@ -397,23 +544,24 @@ public class MapsActivity extends FragmentActivity
                 .build();
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client.connect();
-        AppIndex.AppIndexApi.start(client, getIndexApiAction());
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        AppIndex.AppIndexApi.end(client, getIndexApiAction());
-        client.disconnect();
-    }
+//    @Override
+//    public void onStart() {
+//        super.onStart();
+//
+//        // ATTENTION: This was auto-generated to implement the App Indexing API.
+//        // See https://g.co/AppIndexing/AndroidStudio for more information.
+//        client.connect();
+//        AppIndex.AppIndexApi.start(client, getIndexApiAction());
+//    }
+//
+//    @Override
+//    public void onStop() {
+//        super.onStop();
+//
+//        // ATTENTION: This was auto-generated to implement the App Indexing API.
+//        // See https://g.co/AppIndexing/AndroidStudio for more information.
+//        AppIndex.AppIndexApi.end(client, getIndexApiAction());
+//        client.disconnect();
+//    }
+//        return true; }
 }
