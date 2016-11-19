@@ -17,7 +17,6 @@ import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.PopupWindow;
 import android.widget.Spinner;
-import android.widget.Toast;
 import android.view.ViewGroup.LayoutParams;
 
 import com.google.android.gms.appindexing.Action;
@@ -159,13 +158,10 @@ public class MapsActivity extends FragmentActivity
 
 
     }
-    private void initPopupWindow(final PopupWindow popupWindow, Marker marker) {
 
+    private void initEditPopupWindow(final PopupWindow popupWindow, final Marker marker) {
 
-        initPopupWindow(popupWindow, marker.getPosition());
-    }
-
-    private void initPopupWindow(final PopupWindow popupWindow, final LatLng latLng) {
+        final LatLng latLng = marker.getPosition();
 
         final Record record = crud.getRecord(latLng, new RecordCRUD.RecordFoundCompleteListener() {
             @Override
@@ -178,11 +174,9 @@ public class MapsActivity extends FragmentActivity
             }
         });
 
-
-        final LatLng objectLocation = latLng;
         /************* SPINNER **********/
 
-        Spinner spinner = (Spinner) popupWindow.getContentView().findViewById(R.id.spinner);
+        Spinner spinner = (Spinner) popupWindow.getContentView().findViewById(R.id.edit_spinner);
         if (spinner == null) {
             Log.i(TAG, "spinner is null");
 
@@ -282,19 +276,19 @@ public class MapsActivity extends FragmentActivity
 
                     record.setType(selectedObjectType);
                     record.setCount(np.getValue());
-                    record.setLatitude(objectLocation.latitude);
-                    record.setLongitude(objectLocation.longitude);
+                    record.setLatitude(latLng.latitude);
+                    record.setLongitude(latLng.longitude);
                     //record.setAltitude(ALTITUDE);
 
-                    Log.d(TAG, String.valueOf(objectLocation.latitude));
-                    Log.d(TAG, String.valueOf(objectLocation.longitude));
+                    Log.d(TAG, String.valueOf(latLng.latitude));
+                    Log.d(TAG, String.valueOf(latLng.longitude));
 
                     crud.createRecord(record, new RecordCRUD.RecordCreatedCallback() {
                         @Override
                         public void RecordCreated(boolean yesNo) {
                             if (yesNo == true) {
-                                Marker initialMarker = mMap.addMarker(new MarkerOptions().position(objectLocation).title(selectedObjectType));
-                                mMap.moveCamera(CameraUpdateFactory.newLatLng(objectLocation));
+                                Marker initialMarker = mMap.addMarker(new MarkerOptions().position(latLng).title(selectedObjectType));
+                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
                                 Log.d(TAG, "object1 created");
                             } else {
                                 Log.d(TAG, "object1 NOT created");
@@ -304,14 +298,14 @@ public class MapsActivity extends FragmentActivity
                 } else {
                     // was clicked on map marker, already existing record
 
-                    crud.updateRecord(record, selectedObjectType, np.getValue(), objectLocation.latitude, objectLocation.longitude,
+                    crud.updateRecord(record, selectedObjectType, np.getValue(), latLng.latitude, latLng.longitude,
                             new RecordCRUD.OnUpdateCompleteListener() {
                                 @Override
                                 public void onUpdate(boolean yes) {
                                     if (yes) {
-                                        Log.i(TAG, "record updated succefully");
+                                        Log.i(TAG, "record updated successfully");
                                     } else {
-                                        Log.i(TAG, "falied to update record");
+                                        Log.i(TAG, "failed to update record");
                                     }
                                 }
                             });
@@ -332,8 +326,7 @@ public class MapsActivity extends FragmentActivity
                 Record record = new Record();
                 record.setLatitude(latLng.latitude);
                 record.setLongitude(latLng.longitude);
-                //Log.d(TAG, String.valueOf(record.getLatitude()));
-//                    Log.d(TAG, String.valueOf(record.getLongitude()));
+
                 crud.deleteRecord(record, new RecordCRUD.RecordDeletedCallback() {
 
                     @Override
@@ -349,6 +342,7 @@ public class MapsActivity extends FragmentActivity
                     }
                 });
 
+                marker.remove();
                 popupWindow.dismiss();
 //                mMap.moveCamera(CameraUpdateFactory.zoomIn());
 //                mMap.moveCamera(CameraUpdateFactory.zoomOut());
@@ -358,27 +352,15 @@ public class MapsActivity extends FragmentActivity
 
     }
 
-    private void initEditPopupWindow(final PopupWindow editPopupWindow, Marker marker) {
+    private void initPopupWindow(final PopupWindow popupWindow, final LatLng objectLocation) {
 
-        final LatLng objectLocation = marker.getPosition();
-
-        final Record record = crud.getRecord(objectLocation, new RecordCRUD.RecordFoundCompleteListener() {
-            @Override
-            public void onRecordFound(Record rec) {
-                if (rec != null) {
-                    Log.i(TAG, "found" + rec.toString() + " record");
-                } else {
-                    Log.i(TAG, "not found record on " + objectLocation.toString());
-                }
-            }
-        });
         ///////////////////SPINNER////////////////////////////////
 
-        Spinner spinner = (Spinner) editPopupWindow.getContentView().findViewById(R.id.edit_spinner);
+        Spinner spinner = (Spinner) popupWindow.getContentView().findViewById(R.id.spinner);
         if (spinner == null) {
-            Log.i(TAG, "Edit Spinner is null");
+            Log.i(TAG, "spinner is null");
         } else {
-            Log.i(TAG, "Edit Spinner is NOT NULL");
+            Log.i(TAG, "spinner is NOT NULL");
         }
 
 
@@ -386,21 +368,15 @@ public class MapsActivity extends FragmentActivity
                 ArrayAdapter.createFromResource(this, R.array.objectsarray, android.R.layout.simple_spinner_item);
 
         if (adapter == null) {
-            Log.i(TAG, "Edit Adapter is null");
+            Log.i(TAG, "adapter is null");
         } else {
-            Log.i(TAG, "Edit Adapter is NOT NULL");
+            Log.i(TAG, "adapter is NOT NULL");
         }
 
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
         spinner.setAdapter(adapter);
 
-        List<String> objectsList = Arrays.asList(getResources().getStringArray(R.array.objectsarray));
-
-        Log.d(TAG, "Element ID is" + String.valueOf(objectsList.indexOf(record.getType())));
-
-        spinner.setSelection(objectsList.indexOf(record.getType()));
-        //ArrayUtils.indexOf(getResources().getStringArray(R.array.objectsarray), record.getType());
 
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -415,46 +391,44 @@ public class MapsActivity extends FragmentActivity
             }
         });
 
-//        Log.d(TAG, "Selected element is:" + spinner.getSelectedItem());
+        Log.d(TAG, "Selected element is:" + spinner.getSelectedItem());
 
-   /********************Number Picker***************/
-        Button btnIncrease = (Button) editPopupWindow.getContentView().findViewById(R.id.buttonIncrease);
-        Button btnDecrease = (Button) editPopupWindow.getContentView().findViewById(R.id.buttonDecrease);
-        final NumberPicker np = (NumberPicker) editPopupWindow.getContentView().findViewById(R.id.number);
+        ////////////////Number Picker/////////////////
+        Button b1 = (Button) popupWindow.getContentView().findViewById(R.id.buttonIncrease);
+        Button b2 = (Button) popupWindow.getContentView().findViewById(R.id.buttonDecrease);
+        final NumberPicker np = (NumberPicker) popupWindow.getContentView().findViewById(R.id.number);
         np.setMaxValue(100); // max value 100
         np.setMinValue(1);   // min value 0
-        np.setValue(record.getCount());
         np.setWrapSelectorWheel(false);
         np.setOnValueChangedListener(this);
 
-
-        btnIncrease.setOnClickListener(new View.OnClickListener() {
+        b1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 np.setValue(np.getValue() + 1);
             }
         });
 
-        btnDecrease.setOnClickListener(new View.OnClickListener() {
+        b2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 np.setValue(np.getValue() - 1);
             }
         });
 
-        editPopupWindow.showAtLocation(editPopupWindow.getContentView(), Gravity.CENTER, 0, 0);
+        popupWindow.showAtLocation(popupWindow.getContentView(), Gravity.CENTER, 0, 0);
 
-        Button btnCancel = (Button) editPopupWindow.getContentView().findViewById(R.id.cancel);
+        Button btnCancel = (Button) popupWindow.getContentView().findViewById(R.id.cancel);
         btnCancel.setOnClickListener(new Button.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                editPopupWindow.dismiss();
+                popupWindow.dismiss();
             }
         });
 
 
-        Button btnSave = (Button) editPopupWindow.getContentView().findViewById(R.id.save);
+        Button btnSave = (Button) popupWindow.getContentView().findViewById(R.id.save);
         btnSave.setOnClickListener(new Button.OnClickListener() {
 
             @Override
@@ -482,11 +456,10 @@ public class MapsActivity extends FragmentActivity
                         }
                     }
                 });
-                editPopupWindow.dismiss();
+                popupWindow.dismiss();
 
             }
         });
-
 
 
     }
